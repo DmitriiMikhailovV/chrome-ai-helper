@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { TSidebar } from './types'
+import { sidebarStyles } from './styles'
 
 export const Sidebar: React.FC<TSidebar> = ({
   isCollapsed,
@@ -26,53 +27,13 @@ export const Sidebar: React.FC<TSidebar> = ({
       <div
         ref={sidebarRef}
         className="extension-sidebar"
-        style={{
-          position: 'fixed',
-          top: '0',
-          right: '0',
-          width: '300px',
-          height: '100vh',
-          backgroundColor: 'rgba(255, 255, 255, 0.4)',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-          zIndex: 999999,
-          transition: 'transform 0.3s ease-in-out',
-          transform: isCollapsed ? 'translateX(100%)' : 'translateX(0)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '12px',
-        }}
+        style={sidebarStyles.container}
       >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
-            background: 'linear-gradient(to right, #3b82f6, #6366f1)',
-            color: '#fff',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '18px',
-              fontWeight: '600',
-            }}
-          >
-            AI Helper
-          </h2>
+        <div style={sidebarStyles.header}>
+          <h2 style={sidebarStyles.headerTitle}>AI Helper</h2>
           <button
             onClick={onToggle}
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '24px',
-              color: 'white',
-              fontWeight: 'bold',
-              transition: 'transform 0.2s ease-in-out',
-            }}
+            style={sidebarStyles.closeButton}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'scale(1.2)'
@@ -85,12 +46,7 @@ export const Sidebar: React.FC<TSidebar> = ({
           </button>
         </div>
         <div
-          style={{
-            padding: '16px',
-            height: 'calc(100vh - 60px)',
-            overflowY: 'auto',
-            backgroundColor: 'rgba(247, 250, 252, 0.7)',
-          }}
+          style={sidebarStyles.content}
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </div>
@@ -101,21 +57,8 @@ export const Sidebar: React.FC<TSidebar> = ({
         onClick={onToggle}
         aria-label={isCollapsed ? 'Open sidebar' : 'Close sidebar'}
         style={{
-          position: 'fixed',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'linear-gradient(to right, #3b82f6, #6366f1)',
-          border: 'none',
-          borderRadius: '8px 0 0 8px',
-          padding: '16px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.2)',
-          zIndex: 999999,
+          ...sidebarStyles.toggleButton,
           right: isCollapsed ? '0' : '300px',
-          transition: 'right 0.3s ease, transform 0.3s ease',
-          color: 'white',
-          fontSize: '24px',
-          fontWeight: 'bold',
         }}
         onMouseOver={(e) => {
           e.currentTarget.style.transform = 'scale(1.1) translateY(-50%)'

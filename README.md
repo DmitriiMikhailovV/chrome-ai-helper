@@ -33,74 +33,43 @@ Before you start, make sure you have the following installed:
 
 2. **Install dependencies:**
 
-  npm install
-
-  or
-
-  yarn install
+    ```bash
+    npm install
 
 3. **Configure Firebase:**
   You need to set up Firebase in your project. Create a Firebase project in the Firebase Console, then create a .env file at the root of the project and add the following Firebase credentials:
 
-  VITE_FIREBASE_API_KEY=<your-api-key>
-  VITE_FIREBASE_AUTH_DOMAIN=<your-auth-domain>
-  VITE_FIREBASE_PROJECT_ID=<your-project-id>
-  VITE_FIREBASE_STORAGE_BUCKET=<your-storage-bucket>
-  VITE_FIREBASE_MESSAGING_SENDER_ID=<your-sender-id>
-  VITE_FIREBASE_APP_ID=<your-app-id>
+    ```bash
+    VITE_FIREBASE_API_KEY=<your-api-key>
+    VITE_FIREBASE_AUTH_DOMAIN=<your-auth-domain>
+    VITE_FIREBASE_PROJECT_ID=<your-project-id>
+    VITE_FIREBASE_STORAGE_BUCKET=<your-storage-bucket>
+    VITE_FIREBASE_MESSAGING_SENDER_ID=<your-sender-id>
+    VITE_FIREBASE_APP_ID=<your-app-id>
 
 4. **Configure Gemini API:**
   In order to use the AI functionality of the extension, you need to set up the Gemini API keys. Create a .env file at the root of your project (or add these variables to your existing .env file) and add the following Gemini configuration:
 
-  VITE_GEMINI_API_KEY=<your-gemini-api-key>
-  VITE_GEMINI_URL=<gemini-api-url>   # Example: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    ```bash
+    VITE_GEMINI_API_KEY=<your-gemini-api-key>
+    VITE_GEMINI_URL=<gemini-api-url>
+
+    *Example gemini url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
 
 5. **Building the Project:**
 
-  npm run build
+    ```bash
+    npm run build
 
 6. **Install the Extension in Chrome:**
 
-  To load the extension in Chrome:
-    - Go to chrome://extensions/ in your Chrome browser.
-    - Enable "Developer mode" at the top right.
-    - Click on "Load unpacked" and select the dist folder from the build output.
-    - The extension will now be installed, and you can start using it.
+- Go to chrome://extensions/ in your Chrome browser.
+- Enable "Developer mode" at the top right.
+- Click on "Load unpacked" and select the dist folder from the build output.
+- The extension will now be installed, and you can start using it.
 
-
-## File Structure
-
-  chrome-extension/                # Root directory for the Chrome extension project
-  ├── dist/                         # Folder where the production build files will be stored
-  ├── node_modules/                 # Folder containing all installed npm dependencies
-  └── src/                          # Source files for the Chrome extension
-      ├── chrome-extension/         # Contains the logic for the Chrome extension
-      │   ├── components/           # React components for the extension's UI
-      │   │   ├── ContextMenu/      # Component for context menu that appears on text selection
-      │   │   ├── Options/          # Options page component
-      │   │   ├── Popup/            # Popup component for user interactions
-      │   │   └── Sidebar/          # Sidebar component displaying AI-generated content
-      │   ├── background.ts         # Background script handling the extension's background logic
-      │   ├── contentScript.tsx     # Content script interacting with the web page DOM
-      │   ├── firebase.ts           # Firebase configuration and Firestore integration
-      │   ├── main.tsx              # Main entry point for the React app
-      ├── public/                   # Public assets used by the extension
-      │   ├── global.css            # Global CSS styles used across the extension
-      │   └── manifest.json         # Manifest file for Chrome extension configuration
-      ├── .env                      # Environment variables file (API keys, configuration)
-      ├── .gitignore                # Git ignore file to exclude unnecessary files from version control
-      ├── .prettierrc               # Prettier configuration for code formatting
-      ├── eslint.config.js          # ESLint configuration for linting the code
-      ├── options.html              # Main HTML file for the options page
-      ├── package.json              # Project metadata and npm dependencies
-      ├── popup.html                # Main HTML file for the popup page
-      ├── README.md                 # Project documentation and setup instructions
-      ├── tsconfig.json             # General TypeScript configuration
-      ├── vite.config.ts            # Vite configuration for building the extension
-      ├── vite.config.content.ts    # Vite config specific for the content script build
 
 ## License
-
 This project is licensed under a **Proprietary License**.
 
 You may use, copy, modify, and distribute this software **only with the explicit written permission** of the author. All rights to the software are reserved by the author.

@@ -4,4 +4,5 @@ export type TContextMenu = {
   onAction1: (text: string) => void
   onAction2: (text: string) => void
   onClose: () => void
+  isLoading?: boolean
 }

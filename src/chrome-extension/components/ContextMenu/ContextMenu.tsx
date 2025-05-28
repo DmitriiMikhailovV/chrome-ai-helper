@@ -1,5 +1,7 @@
 import { createPortal } from 'react-dom'
 import { TContextMenu } from './types'
+import { useState, useEffect } from 'react'
+import { contextMenuStyles } from './styles'
 
 export const ContextMenu: React.FC<TContextMenu> = ({
   position,
@@ -7,85 +9,96 @@ export const ContextMenu: React.FC<TContextMenu> = ({
   onAction1,
   onAction2,
   onClose,
+  isLoading,
 }) => {
+  const [activeButton, setActiveButton] = useState<
+    'action1' | 'action2' | null
+  >(null)
+  const [menuPosition] = useState(position)
+
+  useEffect(() => {
+    if (!isLoading) {
+      setActiveButton(null)
+    }
+  }, [isLoading])
+
+  const handleAction = (
+    actionType: 'action1' | 'action2',
+    callback: (text: string) => void
+  ) => {
+    setActiveButton(actionType)
+    callback(selectedText)
+  }
+
   return createPortal(
     <div
       id="text-hover-context-menu"
-      style={{
-        position: 'fixed',
-        left: `${position.x - 3}px`,
-        top: `${position.y - 3}px`,
-        zIndex: 9999999,
-        backdropFilter: 'blur(10px)',
-        backgroundColor: 'rgba(255, 255, 255, 0.4)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '12px',
-        padding: '20px',
-        width: '180px',
-        textAlign: 'center',
-        transition: 'all 0.3s ease-out',
-      }}
+      style={contextMenuStyles.contextMenuContainer(menuPosition)}
       onMouseLeave={onClose}
     >
-      <button
-        onClick={() => onAction1(selectedText)}
+      <div
         style={{
-          width: '100%',
-          padding: '12px 16px',
-          borderRadius: '16px',
-          background: 'linear-gradient(to right, #3b82f6, #6366f1)',
-          color: 'white',
-          fontWeight: '500',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          transition:
-            'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          marginBottom: '12px',
-          cursor: 'pointer',
+          ...contextMenuStyles.button,
+          ...contextMenuStyles.button1,
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)'
-          e.currentTarget.style.boxShadow = '0 6px 8px rgba(0, 0, 0, 0.2)'
-          e.currentTarget.style.backgroundColor = '#2563eb'
+          if (activeButton !== 'action1') {
+            e.currentTarget.style.transform = 'scale(1.05)'
+            e.currentTarget.style.boxShadow = '0 6px 8px rgba(0, 0, 0, 0.2)'
+            e.currentTarget.style.backgroundColor = '#2563eb'
+          }
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.transform = 'scale(1)'
-          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
-          e.currentTarget.style.backgroundColor =
-            'linear-gradient(to right, #3b82f6, #6366f1)'
+          if (activeButton !== 'action1') {
+            e.currentTarget.style.transform = 'scale(1)'
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
+            e.currentTarget.style.backgroundColor = ''
+          }
         }}
+        onClick={() => handleAction('action1', onAction1)}
       >
-        What does it mean
-      </button>
+        {activeButton === 'action1' && isLoading ? (
+          <div style={contextMenuStyles.spinner}></div>
+        ) : (
+          'What does it mean'
+        )}
+      </div>
 
-      <button
-        onClick={() => onAction2(selectedText)}
+      <div
         style={{
-          width: '100%',
-          padding: '12px 16px',
-          borderRadius: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.7)',
-          color: '#333',
-          fontWeight: '500',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          transition:
-            'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-          border: '1px solid rgba(255, 255, 255, 0.5)',
-          cursor: 'pointer',
+          ...contextMenuStyles.button,
+          ...contextMenuStyles.button2,
+          marginTop: '12px',
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)'
-          e.currentTarget.style.boxShadow = '0 6px 8px rgba(0, 0, 0, 0.2)'
-          e.currentTarget.style.backgroundColor = '#e5e7eb'
+          if (activeButton !== 'action2') {
+            e.currentTarget.style.transform = 'scale(1.05)'
+            e.currentTarget.style.boxShadow = '0 6px 8px rgba(0, 0, 0, 0.2)'
+            e.currentTarget.style.backgroundColor = '#e5e7eb'
+          }
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.transform = 'scale(1)'
-          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
-          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'
+          if (activeButton !== 'action2') {
+            e.currentTarget.style.transform = 'scale(1)'
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
+            e.currentTarget.style.backgroundColor = ''
+          }
         }}
+        onClick={() => handleAction('action2', onAction2)}
       >
-        Save this note
-      </button>
+        {activeButton === 'action2' && isLoading ? (
+          <div style={contextMenuStyles.spinner}></div>
+        ) : (
+          'Save this note'
+        )}
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+      `}</style>
     </div>,
     document.body
   )

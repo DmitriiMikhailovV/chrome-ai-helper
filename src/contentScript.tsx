@@ -4,22 +4,54 @@ import { ContextMenu, Sidebar } from './chrome-extension/components'
 let isExtensionEnabled = true
 let isSidebarCollapsed = true
 let geminiResponseText = ''
+let isLoading = false
 
 let sidebarRoot: ReactDOM.Root | null = null
 let menuRoot: ReactDOM.Root | null = null
+let menuContainer: HTMLDivElement | null = null
 let currentText: string | null = null
 let lastPosition = { x: 0, y: 0 }
+let currentMenuPosition = { x: 0, y: 0 }
 let isMenuHovered = false
 let isSidebarHovered = false
 let hoverTimer: NodeJS.Timeout | null = null
-const HOVER_DELAY = 300
+const HOVER_DELAY = 500
+
+// Function to synchronize the extension state
+const syncExtensionState = (enabled: boolean) => {
+  isExtensionEnabled = enabled
+  if (enabled) {
+    initializeExtension()
+  } else {
+    cleanupExtension()
+  }
+}
+
+// Function to remove existing menu containers
+const removeExistingMenuContainers = () => {
+  document.querySelectorAll('#text-hover-context-menu').forEach((el) => {
+    if (document.body.contains(el)) {
+      el.remove()
+    }
+  })
+}
+
+// Initialization with state check
+const initialize = async () => {
+  removeExistingMenuContainers()
+  const { extensionEnabled } = await chrome.storage.sync.get('extensionEnabled')
+  syncExtensionState(extensionEnabled ?? true)
+}
 
 // Initializes the extension by rendering the sidebar and setting up event listeners
 const initializeExtension = () => {
   if (!isExtensionEnabled) return
-  const sidebarContainer = document.createElement('div')
-  document.body.appendChild(sidebarContainer)
-  sidebarRoot = ReactDOM.createRoot(sidebarContainer)
+  if (!document.querySelector('.extension-sidebar-container')) {
+    const sidebarContainer = document.createElement('div')
+    sidebarContainer.className = 'extension-sidebar-container'
+    document.body.appendChild(sidebarContainer)
+    sidebarRoot = ReactDOM.createRoot(sidebarContainer)
+  }
   renderSidebar()
   setupEventListeners()
 }
@@ -39,49 +71,43 @@ const renderSidebar = () => {
 // Displays the context menu at the cursor's position with the selected text
 const showContextMenu = (x: number, y: number, text: string) => {
   if (isSidebarHovered) return
-
-  if (currentText === text) return
-  currentText = text
   isMenuHovered = false
 
-  // If the context menu is already rendered, just update it
-  if (menuRoot) {
-    menuRoot.render(
-      <ContextMenu
-        position={{ x, y }}
-        selectedText={text}
-        onAction1={sendRequest}
-        onAction2={saveNote}
-        onClose={() => {
-          isMenuHovered = false
-          if (menuRoot) {
-            menuRoot.unmount()
-            menuRoot = null
-            currentText = null
-          }
-        }}
-      />
-    )
-    return
+  currentText = text
+  lastPosition = { x, y }
+  currentMenuPosition = { x, y }
+
+  if (menuContainer && document.body.contains(menuContainer)) {
+    menuContainer.remove()
   }
 
-  // Create a new menu if it doesn't exist yet
-  const menuContainer = document.createElement('div')
+  menuContainer = document.createElement('div')
   menuContainer.id = 'text-hover-context-menu'
   document.body.appendChild(menuContainer)
   menuRoot = ReactDOM.createRoot(menuContainer)
 
+  renderContextMenu()
+}
+
+const renderContextMenu = () => {
+  if (!menuRoot || !currentText || !menuContainer) return
+
   menuRoot.render(
     <ContextMenu
-      position={{ x, y }}
-      selectedText={text}
+      position={currentMenuPosition}
+      selectedText={currentText}
       onAction1={sendRequest}
       onAction2={saveNote}
+      isLoading={isLoading}
       onClose={() => {
         isMenuHovered = false
-        if (menuRoot) {
+        if (menuRoot && menuContainer) {
           menuRoot.unmount()
+          if (document.body.contains(menuContainer)) {
+            menuContainer.remove()
+          }
           menuRoot = null
+          menuContainer = null
           currentText = null
         }
       }}
@@ -125,11 +151,11 @@ const getTextContentUnderCursor = (element: Element | null): string | null => {
 // Cleans up the extension, removing sidebar, context menu, and resetting state
 const cleanupExtension = () => {
   document
-    .querySelectorAll(
-      '[id^="text-hover-"], .extension-sidebar, .extension-sidebar-toggle'
-    )
+    .querySelectorAll('#text-hover-context-menu, .extension-sidebar-container')
     .forEach((el) => {
-      el.remove()
+      if (document.body.contains(el)) {
+        el.remove()
+      }
     })
 
   // Reset states for hovering and text tracking
@@ -137,8 +163,8 @@ const cleanupExtension = () => {
   isSidebarHovered = false
   currentText = null
   lastPosition = { x: 0, y: 0 }
+  currentMenuPosition = { x: 0, y: 0 }
 
-  // Clear hover timer if it exists
   if (hoverTimer) {
     clearTimeout(hoverTimer)
     hoverTimer = null
@@ -149,6 +175,8 @@ const cleanupExtension = () => {
     menuRoot.unmount()
     menuRoot = null
   }
+  menuContainer = null
+
   if (sidebarRoot) {
     sidebarRoot.unmount()
     sidebarRoot = null
@@ -159,13 +187,11 @@ const cleanupExtension = () => {
 const setupEventListeners = () => {
   let lastHoveredElement: Element | null = null
 
-  // Track mouse position on movement
   document.addEventListener('mousemove', (e) => {
     if (!isExtensionEnabled) return
     lastPosition = { x: e.clientX, y: e.clientY }
   })
 
-  // Trigger context menu on hover over text
   document.addEventListener('mouseover', (e) => {
     if (!isExtensionEnabled) return
     const target = e.target as Element
@@ -281,6 +307,11 @@ const toggleSidebar = () => {
 // Send a request to fetch content based on selected text
 const sendRequest = async (text: string) => {
   if (!isExtensionEnabled) return
+
+  isLoading = true
+  renderContextMenu()
+  renderSidebar()
+
   try {
     const response = await fetch(
       `${import.meta.env.VITE_GEMINI_URL}?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
@@ -311,10 +342,12 @@ const sendRequest = async (text: string) => {
     geminiResponseText =
       data.candidates[0]?.content?.parts[0]?.text || 'No response'
     isSidebarCollapsed = false
-    renderSidebar()
   } catch (error) {
     geminiResponseText = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
     isSidebarCollapsed = false
+  } finally {
+    isLoading = false
+    renderContextMenu()
     renderSidebar()
   }
 }
@@ -322,7 +355,15 @@ const sendRequest = async (text: string) => {
 // Save the selected text as a note
 const saveNote = (text: string) => {
   if (!isExtensionEnabled) return
+
+  isLoading = true
+  renderContextMenu()
+  renderSidebar()
+
   chrome.runtime.sendMessage({ type: 'SAVE_NOTE', text }, (response) => {
+    isLoading = false
+    renderContextMenu()
+    renderSidebar()
     alert('Note saved successfully!')
     if (!response?.success) {
       console.error('Failed to save note')
@@ -331,26 +372,16 @@ const saveNote = (text: string) => {
 }
 
 // Initialize extension
-initializeExtension()
+initialize()
 
 // Listen for messages to toggle extension or sidebar
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'TOGGLE_EXTENSION') {
-    isExtensionEnabled = message.enabled
-    if (!isExtensionEnabled) {
-      cleanupExtension()
-    } else {
-      initializeExtension()
-    }
+    syncExtensionState(message.enabled)
     sendResponse({ success: true })
   } else if (message.type === 'TOGGLE_SIDEBAR') {
     toggleSidebar()
+  } else if (message.type === 'GET_STATE') {
+    sendResponse({ enabled: isExtensionEnabled })
   }
 })
-
-// Initialize extension based on its state
-if (isExtensionEnabled) {
-  initializeExtension()
-} else {
-  cleanupExtension()
-}
